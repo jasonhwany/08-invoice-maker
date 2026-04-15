@@ -1,0 +1,7 @@
+@import "tailwindcss";
+* { box-sizing: border-box; }
+body { min-height: 100vh; background: #030712; color: #f9fafb; }
+@media print {
+  body { background: white; color: black; }
+  .no-print { display: none !important; }
+}
