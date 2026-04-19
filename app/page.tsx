@@ -1,5 +1,19 @@
 "use client";
 import AdUnit from "@/components/AdUnit"
+
+import Script from "next/script"
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "견적서 생성기 (Invoice Maker)",
+  url: "https://invoice.moneystom7.com",
+  description: "간단한 입력으로 견적서를 즉시 출력하는 무료 도구",
+  applicationCategory: "UtilityApplication",
+  operatingSystem: "Any",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
+  inLanguage: ["ko", "en"],
+}
 import { useState } from "react";
 
 type Item = { desc: string; qty: number; price: number };
