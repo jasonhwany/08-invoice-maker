@@ -1,7 +1,5 @@
-"use client";
-import AdUnit from "@/components/AdUnit"
-
-import Script from "next/script"
+import InvoiceMakerClient from "@/components/InvoiceMakerClient";
+import Script from "next/script";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -13,124 +11,56 @@ const jsonLd = {
   operatingSystem: "Any",
   offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
   inLanguage: ["ko", "en"],
-}
-import { useState } from "react";
+};
 
-type Item = { desc: string; qty: number; price: number };
-type Info = { company: string; address: string; phone: string; email: string };
-
-const InfoBlock = ({ title, info, setInfo }: { title: string; info: Info; setInfo: (i: Info) => void }) => (
-  <div className="bg-gray-900 rounded-2xl p-5 print:bg-white print:border print:border-gray-200">
-    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{title}</h3>
-    <div className="space-y-2">
-      {(["company","address","phone","email"] as const).map(k => (
-        <input key={k} type={k === "email" ? "email" : "text"} value={info[k]}
-          onChange={e => setInfo({ ...info, [k]: e.target.value })}
-          placeholder={{ company:"회사명", address:"주소", phone:"전화번호", email:"이메일" }[k]}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors print:border-0 print:bg-transparent print:text-gray-900" />
-      ))}
-    </div>
-  </div>
-);
-
-export default function InvoiceMaker() {
-  const [from, setFrom] = useState<Info>({ company: "", address: "", phone: "", email: "" });
-  const [to, setTo] = useState<Info>({ company: "", address: "", phone: "", email: "" });
-  const [num, setNum] = useState(`INV-${new Date().getFullYear()}${String(Date.now()).slice(-4)}`);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [due, setDue] = useState("");
-  const [items, setItems] = useState<Item[]>([{ desc: "", qty: 1, price: 0 }]);
-  const [tax, setTax] = useState(10);
-  const [notes, setNotes] = useState("");
-
-  const upd = (i: number, k: keyof Item, v: string | number) =>
-    setItems(arr => arr.map((it, j) => j === i ? { ...it, [k]: v } : it));
-
-  const sub = items.reduce((s, it) => s + it.qty * it.price, 0);
-  const taxAmt = sub * tax / 100;
-  const total = sub + taxAmt;
-  const fmt = (n: number) => n.toLocaleString("ko-KR");
-
+export default function Page() {
   return (
     <div className="min-h-screen bg-gray-950 text-white p-4 font-sans">
-      <div className="max-w-3xl mx-auto pt-8">
-        <div className="text-center mb-8 no-print">
-          <div className="text-5xl mb-3">📋</div>
-          <h1 className="text-3xl font-bold tracking-tight">견적서 생성기</h1>
-          <p className="text-gray-400 mt-1 text-sm">Invoice Maker · 작성 후 인쇄 버튼으로 PDF 저장 가능</p>
+      <Script id="json-ld" type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+      <InvoiceMakerClient />
+
+      <section className="max-w-3xl mx-auto mt-16 space-y-10 text-sm text-gray-400 pb-16 no-print">
+        <div>
+          <h2 className="text-white text-base font-semibold mb-3">견적서 생성기란?</h2>
+          <p>
+            견적서 생성기(Invoice Maker)는 발신자·수신자 정보와 품목을 입력하면 견적서를 즉시
+            생성하고 PDF로 저장할 수 있는 무료 온라인 도구입니다. 별도 소프트웨어 설치 없이
+            브라우저에서 바로 사용하고 인쇄하거나 PDF로 저장할 수 있습니다.
+            프리랜서, 소상공인, 개인 사업자에게 적합합니다.
+          </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InfoBlock title="발신자" info={from} setInfo={setFrom} />
-            <InfoBlock title="수신자 (청구 대상)" info={to} setInfo={setTo} />
-          </div>
-
-          <div className="bg-gray-900 rounded-2xl p-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { label: "견적 번호", val: num, set: setNum, type: "text" },
-                { label: "발행일", val: date, set: setDate, type: "date" },
-                { label: "유효기간", val: due, set: setDue, type: "date" },
-                { label: "세율 (%)", val: String(tax), set: (v: string) => setTax(+v), type: "number" },
-              ].map(({ label, val, set, type }) => (
-                <div key={label}>
-                  <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>
-                  <input type={type} value={val} onChange={e => set(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gray-900 rounded-2xl p-5">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">품목</h3>
-            <div className="space-y-2">
-              <div className="grid grid-cols-[1fr,70px,110px,32px] gap-2 text-xs text-gray-500 px-1">
-                <span>품목 설명</span><span className="text-center">수량</span><span className="text-right">단가 (₩)</span><span></span>
-              </div>
-              {items.map((it, i) => (
-                <div key={i} className="grid grid-cols-[1fr,70px,110px,32px] gap-2 items-center">
-                  <input value={it.desc} onChange={e => upd(i, "desc", e.target.value)} placeholder="품목 설명"
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors" />
-                  <input type="number" value={it.qty} min="1" onChange={e => upd(i, "qty", +e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:border-emerald-500 transition-colors" />
-                  <input type="number" value={it.price} onChange={e => upd(i, "price", +e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:border-emerald-500 transition-colors" />
-                  <button onClick={() => setItems(arr => arr.filter((_, j) => j !== i))} disabled={items.length === 1}
-                    className="text-gray-600 hover:text-red-400 text-lg disabled:opacity-30 transition-colors">×</button>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => setItems(arr => [...arr, { desc: "", qty: 1, price: 0 }])}
-              className="mt-3 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">+ 품목 추가</button>
-          </div>
-
-          <div className="bg-gray-900 rounded-2xl p-5 space-y-2">
-            <div className="flex justify-between text-sm text-gray-400"><span>소계</span><span className="font-mono">₩{fmt(sub)}</span></div>
-            <div className="flex justify-between text-sm text-gray-400"><span>세금 ({tax}%)</span><span className="font-mono">₩{fmt(taxAmt)}</span></div>
-            <div className="border-t border-gray-700 pt-3 flex justify-between text-lg font-bold">
-              <span>총 합계</span><span className="text-emerald-400 font-mono">₩{fmt(total)}</span>
-            </div>
-          </div>
-
-          <div className="bg-gray-900 rounded-2xl p-5">
-            <label className="text-xs text-gray-400 mb-1.5 block">비고 / 메모</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-emerald-500 transition-colors"
-              placeholder="결제 방법, 계좌번호, 기타 안내사항..." />
-          </div>
-
-          <button onClick={() => window.print()}
-            className="no-print w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3.5 rounded-xl transition-colors text-base">
-            🖨️ 인쇄 / PDF 저장
-          </button>
+        <div>
+          <h2 className="text-white text-base font-semibold mb-3">주요 기능</h2>
+          <ul className="space-y-2 list-disc list-inside">
+            <li><strong className="text-gray-300">발신자·수신자 정보</strong> — 회사명, 주소, 전화번호, 이메일 입력</li>
+            <li><strong className="text-gray-300">다중 품목</strong> — 품목명, 수량, 단가를 자유롭게 추가·삭제</li>
+            <li><strong className="text-gray-300">세금 자동 계산</strong> — 세율 설정 시 소계·세금·합계 자동 계산</li>
+            <li><strong className="text-gray-300">PDF 저장</strong> — 브라우저 인쇄 기능으로 PDF 파일로 저장</li>
+            <li><strong className="text-gray-300">비고 메모</strong> — 결제 방법, 계좌 정보 등 추가 안내 입력</li>
+          </ul>
         </div>
 
-        <p className="no-print text-center text-xs text-gray-600 mt-10">
-          <a href="https://moneystom7.com" className="hover:text-gray-400 transition-colors">← MoneyStom7 홈으로</a>
-        </p>
-      </div>
+        <div>
+          <h2 className="text-white text-base font-semibold mb-3">자주 묻는 질문 (FAQ)</h2>
+          <dl className="space-y-4">
+            <div>
+              <dt className="text-gray-300 font-medium">견적서를 PDF로 저장하는 방법은?</dt>
+              <dd className="mt-1">하단의 "인쇄 / PDF 저장" 버튼을 클릭하면 브라우저 인쇄 창이 열립니다. 프린터 선택에서 "PDF로 저장" 또는 "Microsoft Print to PDF"를 선택하면 PDF 파일로 저장됩니다.</dd>
+            </div>
+            <div>
+              <dt className="text-gray-300 font-medium">입력한 데이터가 저장되나요?</dt>
+              <dd className="mt-1">아니요. 모든 데이터는 브라우저 메모리에만 임시 저장되며 페이지를 닫으면 사라집니다. 서버로 전송되지 않아 기밀 정보도 안전하게 사용할 수 있습니다.</dd>
+            </div>
+            <div>
+              <dt className="text-gray-300 font-medium">부가가치세(VAT) 10%를 자동으로 계산할 수 있나요?</dt>
+              <dd className="mt-1">네. 세율 입력란에 10을 입력하면 소계의 10%가 자동으로 세금으로 계산되어 총 합계에 반영됩니다.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
     </div>
   );
 }
